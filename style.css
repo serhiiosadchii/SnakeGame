@@ -1,0 +1,27 @@
+
+.ui {
+    border: solid tomato 1px;
+    height: fit-content;
+    width: fit-content;
+    display: flex;
+  }
+.row {
+  display: flex;
+}
+.cell {
+  height: 30px;
+  width: 30px;
+  border: 1px solid black ;
+}
+.snake{
+  background-color: teal;
+}
+.meal{
+  background-color: thistle;
+}
+.empty {
+  background-color: gray;
+}
+.backMenu{
+  display: flex;
+}
