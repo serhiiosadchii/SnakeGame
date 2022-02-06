@@ -1,6 +1,5 @@
 
 .ui {
-    border: solid tomato 1px;
     height: fit-content;
     width: fit-content;
     display: flex;
@@ -22,6 +21,30 @@
 .empty {
   background-color: gray;
 }
+.wall {
+  background-color: brown;
+}
 .backMenu{
   display: flex;
+}
+.gameOver{
+  position: absolute;
+  visibility: visible;
+  font-size: 80px;
+  color: black;
+  left: calc(50% - 338px);
+  top: calc(50% - 250px);
+}
+.gameContinue{
+  position: absolute;
+  visibility: hidden;
+}
+.score{
+  font-size: 80px;
+  color: black;
+  height: 100px;
+  align-items: center;
+  padding-left: 30px;
+  padding-right: 30px;
+  border: 3px solid black;
 }

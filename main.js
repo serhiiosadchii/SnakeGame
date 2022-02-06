@@ -3,52 +3,61 @@ let snakeCells = [];
 let snakeLenght = 3;
 let mealsXY = [];
 let boardCoordinates = [];
-let mealCoordinates = [];
-let side = 'ArrowLeft';
+let meal = [];
+let direction = 2;
 let moveId;
 let mealId;
 let isIncreasing = false;
-let snakeSpeed = 0;
+let changeSpeedInterval = 250;
+let snakeSpeed = 250;
 let mealCreationSpeed = 0;
+let score = 0;
 
 function loadGame(){
     createBoard();
     createSnake();
-    moveId = setInterval(increaseMoveSpeed, snakeSpeed);
+    moveId = setInterval(increaseMoveSpeed, changeSpeedInterval);
     mealId = setInterval(addMeal, mealCreationSpeed);
 }
 
 function addMeal(){
+    if(meal.length >=2){
+        return;
+    }
     let xMeal = (Math.random() * 30) | 0;
     let yMeal = (Math.random() * 30) | 0;
     if(!checkCoordinateIsValid(xMeal, yMeal)){
         addMeal();
     }
-    let cell = document.getElementById(`${xMeal}-${yMeal}`);
-    cell.classList.remove('empty');
-    cell.classList.add('meal');
-    clearInterval(mealId);
-    mealCreationSpeed = 5000;
-    mealId = setInterval(addMeal, mealCreationSpeed);
+    else{
+        let cell = document.getElementById(`${xMeal}-${yMeal}`);
+        cell.classList.remove('empty');
+        cell.classList.add('meal');
+        meal.push(cell);
+        clearInterval(mealId);
+        mealCreationSpeed = 100;
+        mealId = setInterval(addMeal, mealCreationSpeed);
+    }
 }
 
 function checkCoordinateIsValid(xMeal, yMeal){
     let isValid = true;
+    let isWall = xMeal == 0 || yMeal == 0 || xMeal == 29 || yMeal == 29;
+    if(isWall) return;
     snakeCells.forEach(sc => {
         let position = sc.id.split('-');
-        if(position[0] == xMeal && position[1] == yMeal){
+        if(+position[0] == xMeal && +position[1] == yMeal){
             isValid = false;
         }
     });
-    document.getElementById(`${xMeal}-${yMeal}`)
     return isValid;
 }
 
 function increaseMoveSpeed() {
     move();
     clearInterval(moveId);
-    snakeSpeed = 250;
-    moveId = setInterval(increaseMoveSpeed, snakeSpeed);
+    snakeSpeed = snakeSpeed - 5;
+    moveId = setInterval(increaseMoveSpeed, changeSpeedInterval);
 }
 
 function createBoard() {
@@ -60,23 +69,50 @@ function createBoard() {
         field.appendChild(row);
         for (let y = 0; y < 30; y++) {
             let cell = document.createElement('div');
-            cell.classList.add('cell', 'empty');
-            cell.setAttribute('id', `${x}-${y}`)
+            cell.setAttribute('id', `${x}-${y}`);
             row.appendChild(cell);
-            boardCoordinates[x].push(y)
+            if(!wallCheck(cell)){
+                addBoardStyleClass(cell, 'empty');
+            }
+            else {
+                addBoardStyleClass(cell, 'wall');
+            }
+            boardCoordinates[x].push(y);
         }
     }
     bindKeys();
 }
 
+function wallCheck(cell) {
+    let cellCoordinates = cell.id.split('-');
+    let isWall = cellCoordinates[0] == 0 || cellCoordinates[1] == 0 || cellCoordinates[0] == 29 || cellCoordinates[1] == 29;
+    return isWall;
+}
+
+function addBoardStyleClass(cell, styleClass) {
+    cell.classList.add('cell', styleClass);
+}
+
 function bindKeys(){
     document.addEventListener('keydown', event => {
         if(event == undefined) return;
-        side = event.key;
+        
+        if(event.key == 'ArrowUp'){
+            direction = 1;
+        }
+        else if(event.key == 'ArrowDown'){
+            direction = -1;
+        }
+        else if(event.key == 'ArrowLeft'){
+            direction = 2;
+        }
+        else if(event.key == 'ArrowRight'){
+            direction = -2;
+        }
     });
 }
 
-function createSnake(){
+function createSnake() {
     let snake = 0;
     boardCoordinates.forEach(x => {
         let xCoordinate = boardCoordinates.indexOf(x);
@@ -94,44 +130,83 @@ function createSnake(){
 
 function move(){
     let headCoordinates = snakeCells[0].id.split('-');
-    if(headCoordinates[0] == 0 || headCoordinates[1] == 0){
+    if(headCoordinates[0] == 0 || headCoordinates[1] == 0 || headCoordinates[0] == 29 || headCoordinates[1] == 29){
         clearInterval(moveId);
         clearInterval(mealId);
         return;
     }
-    moveHead(headCoordinates);
-    
+    moveHead(headCoordinates); 
 }
-
-
 
 function moveHead(headCoordinates){
     let nextCoordinates = [0, 0];
-    if(side == 'ArrowUp'){
+    if(direction == 1){
         nextCoordinates[0] = headCoordinates[0] - 1;
         nextCoordinates[1] = headCoordinates[1];
     }
-    else if(side == 'ArrowDown'){
+    else if(direction == -1){
         nextCoordinates[0] = +headCoordinates[0] + 1;
         nextCoordinates[1] = headCoordinates[1];
     }
-    else if(side == 'ArrowLeft'){
+    else if(direction == 2){
         nextCoordinates[0] = headCoordinates[0];
         nextCoordinates[1] = headCoordinates[1] - 1;
     }
-    else if(side == 'ArrowRight'){
+    else if(direction == -2){
         nextCoordinates[0] = headCoordinates[0];
         nextCoordinates[1] = +headCoordinates[1] + 1;
     }
+    
     let cell = document.getElementById(`${nextCoordinates[0]}-${nextCoordinates[1]}`);
-
-    cell.classList.remove('empty');
-    cell.classList.add('snake');
-    snakeCells.unshift(cell);
-
-    if(!checkMeal(cell)){
-        removeLast();
+     
+    if(!checkWrongTurn(cell)){
+        direction = direction * -1;
+        moveHead(headCoordinates);
     }
+    else{
+        if(gameOver(cell)) return;
+        cell.classList.remove('empty');
+        cell.classList.add('snake');
+        snakeCells.unshift(cell);
+    
+        if(!checkMeal(cell)){
+            removeLast();
+        }
+    }
+}
+
+function gameOver(cell){
+    if(!checkValidMove(cell) || wallCheck(cell)){
+        clearInterval(moveId);
+        clearInterval(mealId);
+        let item = document.getElementById("gameOver");
+        item.classList='gameOver';
+        return true;
+    }
+    return false;
+}
+
+function checkWrongTurn(cell){
+    let nextCoordinates = cell.id.split('-');
+    let isValid = true;
+    let position = snakeCells[1].id.split('-');
+        if(+position[0] == +nextCoordinates[0] && +position[1] == +nextCoordinates[1]){
+            isValid =  false;
+        }
+
+    return isValid;
+}
+
+function checkValidMove(cell){
+    let nextCoordinates = cell.id.split('-');
+    let isValid = true;
+    snakeCells.forEach(sc => {
+        let position = sc.id.split('-');
+        if(+position[0] == +nextCoordinates[0] && +position[1] == +nextCoordinates[1]){
+            isValid =  false;
+        }
+    });
+    return isValid;
 }
 
 function checkMeal(cell){
@@ -139,6 +214,9 @@ function checkMeal(cell){
         return false;
     }
     cell.classList.remove('meal');
+    score++;
+    meal.pop();
+    document.getElementById('score').innerHTML = score;
     return true;
 }
 
@@ -149,4 +227,3 @@ function removeLast(){
     cell.classList.add('empty');
     snakeCells.pop();
 }
-
